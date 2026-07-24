@@ -178,3 +178,7 @@ cython_debug/
 
 # Editor directories and files
 .vscode/
+
+# Media files, plots, uploaded files, and other large files
+media/plots/
+media/uploads/

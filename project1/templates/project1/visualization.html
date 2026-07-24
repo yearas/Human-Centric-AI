@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Visualization of the data</div>
+    </div>
+    <div class="main-text">
+        <p>{{ feature_x }} vs {{ feature_y }}</p>
+        <img src="{{ image_url }}" alt="Scatter plot">
+    </div>
+</div>
+{% endblock %}

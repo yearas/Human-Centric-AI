@@ -7,6 +7,12 @@
     </div>
     <div class="main-text">
         <p>Project 1 runs successfully.</p>
+
+        <div class="button-container">
+            <form action="{% url 'project1:upload_csv' %}" method="get">
+                <button type="submit">Upload the csv file</button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
