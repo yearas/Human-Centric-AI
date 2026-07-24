@@ -25,8 +25,16 @@ def visualization(request):
     # Determine feature and target columns
     feature_columns = df.columns[:-1]
     target_column = df.columns[-1]
-    # Use the first two feature columns for visualization
-    feature_x, feature_y = feature_columns[0], feature_columns[1]
+
+    # Get selected features from GET parameters, defaulting to the first two feature columns
+    feature_x = request.GET.get('feature_x', feature_columns[0])
+    feature_y = request.GET.get('feature_y', feature_columns[1])
+
+    if feature_x not in feature_columns:
+        feature_x = feature_columns[0]
+    if feature_y not in feature_columns:
+        feature_y = feature_columns[1]
+
 
     # Flag for classification, heuristically determined based on the target column's data type and unique values
     is_classification = (
@@ -46,7 +54,7 @@ def visualization(request):
 
     plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
     os.makedirs(plots_dir, exist_ok=True)
-    plot_filename = f'plots/{request.session.session_key}.png'
+    plot_filename = f'plots/{request.session.session_key}_{feature_x}_{feature_y}.png'
     plt.savefig(os.path.join(settings.MEDIA_ROOT, plot_filename))
     plt.close()
 
@@ -54,6 +62,7 @@ def visualization(request):
         'image_url': settings.MEDIA_URL + plot_filename,
         'feature_x': feature_x,
         'feature_y': feature_y,
+        'feature_columns': feature_columns,
     })
 
 

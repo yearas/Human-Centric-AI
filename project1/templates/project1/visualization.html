@@ -6,7 +6,24 @@
         <div class="title">Visualization of the data</div>
     </div>
     <div class="main-text">
-        <p>{{ feature_x }} vs {{ feature_y }}</p>
+        <form method="get">
+            <label for="feature_x">X-axis:</label>
+            <select name="feature_x" id="feature_x">
+                {% for col in feature_columns %}
+                    <option value="{{ col }}" {% if col == feature_x %}selected{% endif %}>{{ col }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="feature_y">Y-axis:</label>
+            <select name="feature_y" id="feature_y">
+                {% for col in feature_columns %}
+                    <option value="{{ col }}" {% if col == feature_y %}selected{% endif %}>{{ col }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Update plot</button>
+        </form>
+
         <img src="{{ image_url }}" alt="Scatter plot">
     </div>
 </div>
