@@ -125,3 +125,20 @@ button:disabled {
     margin-bottom: 1em ;
     text-indent: 22px ;
 }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+th, td {
+  padding: 8px 16px;
+  text-align: center;
+}
+
+th {
+  border-bottom: 2px solid #275CB2;
+}
+
+.best_row { background-color: #e6f4ea; font-weight: bold; }

@@ -174,9 +174,9 @@ def training(request):
                     y_pred = pipeline.predict(X_test)
                     metrics = compute_metrics(y_test, y_pred, is_classification)
                     # Append the results with hyperparameter value, model class name, and computed metrics
-                    results.append({'hyperparameter': value, **metrics})
+                    metrics = {k: round(v, 4) for k, v in metrics.items()}
+                    results.append({'hyperparameter': round(value, 6), **metrics})
             elif data['evaluation_method'] == 'cv':
-                
                 for value in grid:
                     pipeline = Pipeline([
                         ('scaler', StandardScaler()),
@@ -184,9 +184,13 @@ def training(request):
                     ])
                     scores = cross_val_score(pipeline, X, y, cv=data['cv_folds'], scoring='accuracy' if is_classification else 'r2')
                     # Append the results with hyperparameter value, model class name, and computed metrics
-                    results.append({'hyperparameter': value,'mean score': np.mean(scores), 'std score': np.std(scores)})
+                    results.append({'hyperparameter': round(value, 6), 'mean score': round(np.mean(scores), 4), 'std score': round(np.std(scores), 4)})
 
-            return render(request, 'project1/training.html', {'form': form, 'results': results})
+            # Determine the best result based on the evaluation method and whether it's a classification or regression task
+            metric_key = 'mean score' if data['evaluation_method'] == 'cv' else ('accuracy' if is_classification else 'r2')
+            best_result = max(results, key=lambda r: r[metric_key]) if results else None
+
+            return render(request, 'project1/training.html', {'form': form, 'results': results, 'best_result': best_result})
 
     else:
         form = TrainingForm()

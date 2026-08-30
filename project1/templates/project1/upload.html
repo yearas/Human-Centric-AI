@@ -9,8 +9,16 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Upload</button>
+            <div class="button-container">
+                <button type="submit">Upload</button>
+            </div>
         </form>
+
+        <div class="button-container">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
 
         {% if form.errors %}
             <p style="color: red;">{{ form.errors }}</p>
