@@ -25,6 +25,17 @@
         </form>
 
         <img src="{{ image_url }}" alt="Scatter plot">
-    </div>
+
+        <div class="button-container">
+            <a href="{% url 'project1:training' %}">
+                <button type="button">Train a model</button>
+            </a>
+        </div>
+
+        <div class="button-container">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
 </div>
 {% endblock %}

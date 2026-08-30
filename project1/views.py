@@ -2,10 +2,66 @@ import os
 import pandas as pd
 from django.conf import settings
 from django.shortcuts import render, redirect
-from .forms import UploadFileForm
+from django.http import HttpResponse
+from .forms import UploadFileForm, TrainingForm
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.linear_model import Ridge, RidgeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, r2_score, mean_squared_error, mean_absolute_error
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+
+CLASSIFICATION_THRESHOLD = 20  # Threshold for determining classification vs regression
+def is_classification_target(series):
+    return not pd.api.types.is_numeric_dtype(series) or series.nunique() <= CLASSIFICATION_THRESHOLD
+
+
+
+# Get the model and hyperparameter grid for a given model type
+# 3 model types are supported: 'knn', 'decision_tree', and 'ridge' for regression/classification tasks.
+# The function returns a model constructor and a hyperparameter grid based on the provided min and max values.
+def get_model_and_grid(is_classification, model_type, hyperparam_min, hyperparam_max, num_steps=10):
+    if model_type == 'knn':
+        grid = list(range(max(1, int(hyperparam_min)), int(hyperparam_max) + 1))
+        if is_classification:
+            model = lambda v: KNeighborsClassifier(n_neighbors=v)
+        else:
+            model = lambda v: KNeighborsRegressor(n_neighbors=v)
+    elif model_type == 'decision_tree':
+        grid = list(range(max(1, int(hyperparam_min)), int(hyperparam_max) + 1))
+        if is_classification:
+            model = lambda v: DecisionTreeClassifier(max_depth=v, random_state=42)
+        else:
+            model = lambda v: DecisionTreeRegressor(max_depth=v, random_state=42)
+    elif model_type == 'ridge':
+        grid = list(np.logspace(np.log10(hyperparam_min), np.log10(hyperparam_max), num_steps))
+        if is_classification:
+            model = lambda v: RidgeClassifier(alpha=v)
+        else:
+            model = lambda v: Ridge(alpha=v)
+    return model, grid
+
+# Compute evaluation metrics based on the type of model (classification or regression)
+def compute_metrics(y_true, y_pred, is_classification):
+    if is_classification:
+        return {
+            'accuracy': accuracy_score(y_true, y_pred),
+            'precision': precision_score(y_true, y_pred, average='macro', zero_division=0),
+            'recall': recall_score(y_true, y_pred, average='macro', zero_division=0),
+            'f1': f1_score(y_true, y_pred, average='macro', zero_division=0),
+        }
+    else:
+        return {
+            'r2': r2_score(y_true, y_pred),
+            'mse': mean_squared_error(y_true, y_pred),
+            'mae': mean_absolute_error(y_true, y_pred),
+        }
 
 
 def index(request):
@@ -36,14 +92,8 @@ def visualization(request):
         feature_y = feature_columns[1]
 
 
-    # Flag for classification, heuristically determined based on the target column's data type and unique values
-    is_classification = (
-        not pd.api.types.is_numeric_dtype(df[target_column])
-        or df[target_column].nunique() <= 20
-    )
-
     plt.figure()
-    if is_classification:
+    if is_classification_target(df[target_column]):
         for label, group in df.groupby(target_column):
             plt.scatter(group[feature_x], group[feature_y], label=str(label))
         plt.legend()
@@ -89,3 +139,56 @@ def upload_csv(request):
         form = UploadFileForm()
     # Render the upload form template with the form context
     return render(request, 'project1/upload.html', {'form': form})
+
+
+def training(request):
+    filename = request.session.get('csv_filename')
+    if not filename:
+        return redirect('project1:upload_csv')
+
+    if request.method == 'POST':
+        form = TrainingForm(request.POST)
+        if form.is_valid():
+            csv_path = os.path.join(settings.MEDIA_ROOT, 'uploads', filename)
+            df = pd.read_csv(csv_path)
+            X = df.iloc[:, :-1]
+            y = df.iloc[:, -1]
+            is_classification = is_classification_target(y)
+
+            data = form.cleaned_data
+            model, grid = get_model_and_grid(
+                is_classification, data['model_type'], data['hyperparameter_min'], data['hyperparameter_max']
+            )
+
+            results = []
+            if data['evaluation_method'] == 'split':
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=data['test_size'], random_state=42
+                )
+                for value in grid:
+                    pipeline = Pipeline([
+                        ('scaler', StandardScaler()),
+                        ('model', model(value)),
+                    ])
+                    pipeline.fit(X_train, y_train)
+                    y_pred = pipeline.predict(X_test)
+                    metrics = compute_metrics(y_test, y_pred, is_classification)
+                    # Append the results with hyperparameter value, model class name, and computed metrics
+                    results.append({'hyperparameter': value, **metrics})
+            elif data['evaluation_method'] == 'cv':
+                
+                for value in grid:
+                    pipeline = Pipeline([
+                        ('scaler', StandardScaler()),
+                        ('model', model(value)),
+                    ])
+                    scores = cross_val_score(pipeline, X, y, cv=data['cv_folds'], scoring='accuracy' if is_classification else 'r2')
+                    # Append the results with hyperparameter value, model class name, and computed metrics
+                    results.append({'hyperparameter': value,'mean score': np.mean(scores), 'std score': np.std(scores)})
+
+            return render(request, 'project1/training.html', {'form': form, 'results': results})
+
+    else:
+        form = TrainingForm()
+    return render(request, 'project1/training.html', {'form': form})
+

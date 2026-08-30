@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Model Training</div>
+    </div>
+    <div class="main-text">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Train</button>
+        </form>
+
+        {% if results %}
+        <table>
+            <thead>
+                <tr>
+                    {% for key in results.0.keys %}
+                        <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        {% for key, value in result.items %}
+                         <td>{{ value }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="button-container">
+            <a href="{% url 'project1:visualization' %}">
+                <button type="button">Return to Visualization</button>
+            </a>
+        </div>
+
+        <div class="button-container">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
+        {% else %}
+            <p>No results to display. Please train a model.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
