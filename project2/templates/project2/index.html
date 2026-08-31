@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Project 2</div>
+    </div>
+    <div class="main-text">
+        <div class="button-container">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
