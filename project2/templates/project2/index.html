@@ -6,6 +6,17 @@
         <div class="title">Project 2</div>
     </div>
     <div class="main-text">
+
+        <p>Decision Tree Visualization:</p>
+        <a href="{{ image_url }}" target="_blank">
+        <img src="{{ image_url }}" alt="Decision Tree">
+        </a>
+        <p>Classification Report:</p>
+        <pre>{{ report }}</pre>
+        <p>Confusion Matrix (Rows = True class, Columns = Predicted class):</p>
+        {{ conf_matrix_table|safe }}
+        <p>Test accuracy: {{ accuracy }}</p>
+        <p>Number of leaves: {{ n_leaves }}</p>
         <div class="button-container">
             <a href="{% url 'home:index' %}">
                 <button type="button">Return to Homepage</button>

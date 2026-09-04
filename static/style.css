@@ -33,11 +33,8 @@ body {
   background-color: white;
   display: grid;
   grid-template-rows: 50px auto;
-  
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  justify-self: center;
+  align-self: start;
 }
 
 .title-container{
@@ -142,3 +139,10 @@ th {
 }
 
 .best_row { background-color: #e6f4ea; font-weight: bold; }
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
