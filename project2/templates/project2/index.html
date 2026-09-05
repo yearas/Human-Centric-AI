@@ -6,7 +6,10 @@
         <div class="title">Project 2</div>
     </div>
     <div class="main-text">
-
+        <form method="get">
+            <label for="lambda_">lambda = {{ lambda_ }}</label>
+            <input type="range" id="lambda_" name="lambda_" min="0" max="0.2" step="0.005" value="{{ lambda_ }}" onchange="this.form.submit()">
+        </form>
         <p>Decision Tree Visualization:</p>
         <a href="{{ image_url }}" target="_blank">
         <img src="{{ image_url }}" alt="Decision Tree">
