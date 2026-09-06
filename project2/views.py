@@ -14,14 +14,64 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import numpy as np
 
+def generate_counterfactuals(x_no_encoded, target_label, model, encoded_features, X_train, numerical_features, categorical_features, category_values, n_samples = 200, k = 5, max_attempts = 5):
 
+    # MAD per encoded column from training data with fallback to 1 if MAD is 0 to avoid division by zero
+    mad = (X_train - X_train.median()).abs().median()
+    mad = mad.replace(0, 1)
+
+    # Create a DataFrame with the same structure as the encoded features, initialized with zeros. This will be used to store the encoded version of the input data point.
+    x_encoded = pd.get_dummies(pd.DataFrame([x_no_encoded]), columns=categorical_features).astype(float)
+    x_encoded = x_encoded.reindex(columns=encoded_features, fill_value=0).iloc[0]
+
+    n = n_samples
+    noise_scale = 1.0
+
+    # Attempt to generate counterfactuals up to max_attempts times, increasing the number of samples and noise scale if no valid counterfactuals are found
+    for attempt in range(max_attempts):
+        candidates = []
+        for _ in range(n):
+            perturbed = x_no_encoded.copy()
+            for feature in numerical_features:
+                # Calculate the standard deviation of the feature in the training data and scale it by 0.3 and the noise_scale to determine the amount of noise to add
+                sigma = X_train[feature].std() * 0.3 * noise_scale
+                perturbed[feature] = x_no_encoded[feature] + np.random.normal(0, sigma)
+            for feature in categorical_features:
+                if np.random.rand() < min(0.3 * noise_scale, 1.0):  # Adjust the probability of perturbing categorical features based on noise_scale
+                    # Get all other possible values for this categorical feature
+                    other_values = [val for val in category_values[feature] if val != x_no_encoded[feature]]
+                    perturbed[feature] = np.random.choice(other_values)
+            candidates.append(perturbed)
+
+        candidates_df = pd.DataFrame(candidates)
+        candidates_encoded = pd.get_dummies(candidates_df, columns=categorical_features).astype(float)
+        candidates_encoded = candidates_encoded.reindex(columns=encoded_features, fill_value=0)
+
+        # Use the trained model to predict the class labels of the perturbed candidates and create a mask to filter out those that match the target label
+        predictions = model.predict(candidates_encoded)
+        mask = predictions == target_label
+
+        # If any valid counterfactuals are found i.e. candidates that match the target label, calculate their distances from the original data point and return the top k closest counterfactuals
+        if mask.sum() > 0:
+            valid = candidates_df[mask].reset_index(drop=True)
+            valid_encoded = candidates_encoded[mask].reset_index(drop=True)
+            distances = (valid_encoded.sub(x_encoded, axis=1).abs() / mad).sum(axis=1)
+            valid['distance'] = distances.round(3)
+            return valid.sort_values(by='distance').head(k)
+
+        # If no valid counterfactuals are found, increase the number of samples and noise scale for the next attempt
+        n = int(n * 1.5)
+        noise_scale *= 1.5
+
+    # If no valid counterfactuals are found after max_attempts, return None
+    return None
 
 def index(request):
     # Load the penguins dataset and drop rows with missing values (11 rows)
     df = load_penguins().dropna()
 
     X = df.drop('species', axis=1)
-    X = pd.get_dummies(X, drop_first=True)  # Convert categorical variables to dummy variables
+    X = pd.get_dummies(X, drop_first=True).astype(float)
     y = df['species']
     # Split the dataset into training and testing sets with stratification, ensuring that the class distribution is preserved in both sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -59,7 +109,7 @@ def index(request):
             non_zero_coefficients = np.sum(np.any(coefficients != 0, axis=0))
             model_variations.append({'model': model_logistic, 'accuracy': accuracy_score(y_test, model_logistic.predict(X_test)), 'complexity_measure': non_zero_coefficients})
 
-    # Select the best decision tree model based on the accuracy and number of leaves, taking into account the regularization parameter 'lambda_'.
+    # Select the best model based on the trade-off between accuracy and complexity, using the provided lambda_ parameter to weight the importance of complexity in the selection process.
     best = max(model_variations, key=lambda x: x['accuracy'] - lambda_ * x['complexity_measure'])
     model = best['model']
 
@@ -76,6 +126,19 @@ def index(request):
     conf_matrix = confusion_matrix(y_test, y_pred, labels=model.classes_)
     conf_matrix_table = pd.DataFrame(conf_matrix, index=model.classes_, columns=model.classes_).to_html()
 
+    original_features = df.drop('species', axis=1).reset_index(drop=True)
+    numerical_features = original_features.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    categorical_features = original_features.select_dtypes(include=['object', 'category']).columns.tolist()
+    category_values = {feature: original_features[feature].unique().tolist() for feature in categorical_features}
+    available_indices = original_features.index.tolist()
+    available_labels = sorted(y.unique())
+
+    x_index = int(request.GET.get('x_index', 0))
+    target_label = request.GET.get('target_label', sorted(y.unique())[0])  # Default to the first class if not provided
+    x_no_encoded = original_features.iloc[x_index]
+
+    counterfactuals = generate_counterfactuals(x_no_encoded, target_label, model, X.columns, X_train, numerical_features, categorical_features, category_values)
+
     context = {
         "accuracy": accuracy,
         "complexity_measure": n_leaves,
@@ -83,6 +146,11 @@ def index(request):
         "report": report,
         "conf_matrix_table": conf_matrix_table,
         "model_type": model_type,
+        "available_indices": available_indices,
+        "available_labels": available_labels,
+        "x_index": x_index,
+        "target_label": target_label,
+        "counterfactuals_table": counterfactuals.to_html() if counterfactuals is not None else None,
     }
 
     if model_type == 'decision_tree':

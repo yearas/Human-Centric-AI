@@ -15,6 +15,20 @@
             </label>
             <label for="lambda_">lambda = {{ lambda_ }}</label>
             <input type="range" id="lambda_" name="lambda_" min="0" max="0.2" step="0.005" value="{{ lambda_ }}" onchange="this.form.submit()">
+            <label>Example x:
+                <select name="x_index" onchange="this.form.submit()">
+                    {% for idx in available_indices %}
+                        <option value="{{ idx }}" {% if idx == x_index %}selected{% endif %}>{{ idx }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Target label:
+                <select name="target_label" onchange="this.form.submit()">
+                    {% for label in available_labels %}
+                        <option value="{{ label }}" {% if label == target_label %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
         </form>
         {% if model_type == 'decision_tree' %}
             <p>Decision Tree Visualization:</p>
@@ -31,6 +45,12 @@
         {{ conf_matrix_table|safe }}
         <p>Test accuracy: {{ accuracy }}</p>
         <p>Complexity measure: {{ complexity_measure }}</p>
+        <p>Counterfactuals (Target: {{ target_label }}):</p>
+        {% if counterfactuals_table %}
+            {{ counterfactuals_table|safe }}
+        {% else %}
+            <p>No counterfactuals found</p>
+        {% endif %}
         <div class="button-container">
             <a href="{% url 'home:index' %}">
                 <button type="button">Return to Homepage</button>
