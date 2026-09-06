@@ -7,19 +7,30 @@
     </div>
     <div class="main-text">
         <form method="get">
+            <label>Model selection:
+                <select name="model_type" onchange="this.form.submit()">
+                    <option value="decision_tree" {% if model_type == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
+                    <option value="logistic" {% if model_type == 'logistic' %}selected{% endif %}>Logistic Regression</option>
+                </select>
+            </label>
             <label for="lambda_">lambda = {{ lambda_ }}</label>
             <input type="range" id="lambda_" name="lambda_" min="0" max="0.2" step="0.005" value="{{ lambda_ }}" onchange="this.form.submit()">
         </form>
-        <p>Decision Tree Visualization:</p>
-        <a href="{{ image_url }}" target="_blank">
-        <img src="{{ image_url }}" alt="Decision Tree">
-        </a>
+        {% if model_type == 'decision_tree' %}
+            <p>Decision Tree Visualization:</p>
+            <a href="{{ image_url }}" target="_blank">
+                <img src="{{ image_url }}" alt="Decision Tree">
+            </a>
+        {% else %}
+            <p>Logistic Regression Coefficients:</p>
+            {{ coefficients_table|safe }}
+        {% endif %}
         <p>Classification Report:</p>
         <pre>{{ report }}</pre>
         <p>Confusion Matrix (Rows = True class, Columns = Predicted class):</p>
         {{ conf_matrix_table|safe }}
         <p>Test accuracy: {{ accuracy }}</p>
-        <p>Number of leaves: {{ n_leaves }}</p>
+        <p>Complexity measure: {{ complexity_measure }}</p>
         <div class="button-container">
             <a href="{% url 'home:index' %}">
                 <button type="button">Return to Homepage</button>
