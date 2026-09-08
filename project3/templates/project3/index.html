@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Project 3</div>
+    </div>
+    <div class="main-text">
+        <h3 style="margin-top: 10px;">Task 1: Baseline AI Model</h3>
+        <p>Model: <strong>TF-IDF + Logistic Regression</strong></p>
+        <p>Classification Report:</p>
+        <pre>{{ report }}</pre>
+        <p>Confusion Matrix (Rows = True class, Columns = Predicted class):</p>
+        {{ conf_matrix_table|safe }}
+        <p>Test accuracy: {{ accuracy }}</p>
+        <p>Complexity measure: {{ complexity_measure }}</p>
+
+        <hr style="margin: 25px 0;">
+
+        <h3>Task 2: Simulated Expert</h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-top: 15px;">
+            <div style="flex: 1; min-width: 260px;">
+                <p>Specialty: <strong>Sports Specialist</strong></p>
+                <p>Expert overall test accuracy: {{ expert_accuracy }}</p>
+                <p>Strength (Inside sports topic accuracy): {{ expert_inside_acc }}</p>
+                <p>Weakness (Outside sports topic accuracy): {{ expert_outside_acc }}</p>
+                <p>Sports topic coverage: {{ expert_topic_coverage|default:expert_region_coverage }}</p>
+            </div>
+            <div style="flex: 1; min-width: 320px; text-align: center;">
+                <img src="{{ expert_plot_url }}" alt="Simulated Expert Accuracy Chart" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #ccc;">
+            </div>
+        </div>
+
+        <div class="button-container" style="margin-top: 25px;">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
