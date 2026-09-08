@@ -66,6 +66,48 @@ def generate_counterfactuals(x_no_encoded, target_label, model, encoded_features
     # If no valid counterfactuals are found after max_attempts, return None
     return None
 
+
+def compute_pdp(model, X, feature, grid):
+    pdp_values = []
+    for value in grid:
+        X_temp = X.copy()
+        X_temp[feature] = value
+        # Use the trained model to predict the probabilities of each class for the modified dataset and calculate the mean predicted probabilities across all samples for this feature value
+        predictions = model.predict_proba(X_temp)
+        pdp_values.append(predictions.mean(axis=0))
+    return np.array(pdp_values)
+
+
+def compute_ale(model, X, feature, n_bins=10):
+    quantiles = np.linspace(0, 1, n_bins + 1)
+    bin_edges = np.unique(X[feature].quantile(quantiles).values)
+    n_bin_actual = len(bin_edges) - 1
+
+    bin_indices = pd.cut(X[feature], bins=bin_edges, labels=False, include_lowest=True)
+
+    n_classes = len(model.classes_)
+    local_effects = np.zeros((n_bin_actual, n_classes))
+    counts = np.zeros(n_bin_actual)
+
+    for k in range(n_bin_actual):
+        bin_mask = (bin_indices == k).values
+        counts[k] = bin_mask.sum()
+        if counts[k] == 0:
+            continue
+        X_lower = X[bin_mask].copy()
+        X_upper = X[bin_mask].copy()
+        X_lower[feature] = bin_edges[k]
+        X_upper[feature] = bin_edges[k + 1]
+        local_effects[k] = (model.predict_proba(X_upper) - model.predict_proba(X_lower)).mean(axis=0)
+
+    ale_uncentered = np.cumsum(local_effects, axis=0)
+    weights = counts / counts.sum()
+    ale_centered = ale_uncentered - (ale_uncentered * weights[:, None]).sum(axis=0)
+
+    bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    return bin_midpoints, ale_centered
+
 def index(request):
     # Load the penguins dataset and drop rows with missing values (11 rows)
     df = load_penguins().dropna()
@@ -139,6 +181,14 @@ def index(request):
 
     counterfactuals = generate_counterfactuals(x_no_encoded, target_label, model, X.columns, X_train, numerical_features, categorical_features, category_values)
 
+    pdp_ale_features = ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']
+    selected_feature = request.GET.get('feature', pdp_ale_features[0])  # Default to the first numerical feature if not provided
+
+    grid = np.linspace(X[selected_feature].min(), X[selected_feature].max(), 20)
+    pdp_values = compute_pdp(model, X, selected_feature, grid)
+    bin_midpoints, ale_values = compute_ale(model, X, selected_feature)
+
+
     context = {
         "accuracy": accuracy,
         "complexity_measure": n_leaves,
@@ -150,6 +200,8 @@ def index(request):
         "available_labels": available_labels,
         "x_index": x_index,
         "target_label": target_label,
+        "selected_feature": selected_feature,
+        "available_features": pdp_ale_features,
         "counterfactuals_table": counterfactuals.to_html() if counterfactuals is not None else None,
     }
 
@@ -169,5 +221,31 @@ def index(request):
     else:
         coefficients_df = pd.DataFrame(model.named_steps['logistic'].coef_, index=model.named_steps['logistic'].classes_, columns=X.columns,).round(3)
         context['coefficients_table'] = coefficients_df.to_html()
+
+
+    plt.figure(figsize=(10, 6))
+    for i, class_label in enumerate(model.classes_):
+        plt.plot(grid, pdp_values[:, i], label=class_label)
+    plt.xlabel(selected_feature)
+    plt.ylabel('Predicted probability')
+    plt.title(f'PDP: {selected_feature}')
+    plt.legend()
+    pdp_filename = 'plots/pdp_project2.png'
+    plt.savefig(os.path.join(settings.MEDIA_ROOT, pdp_filename), dpi=150, bbox_inches='tight')
+    plt.close()
+    context['pdp_image_url'] = settings.MEDIA_URL + pdp_filename
+
+    plt.figure(figsize=(10, 6))
+    for i, class_label in enumerate(model.classes_):
+        plt.plot(bin_midpoints, ale_values[:, i], label=class_label)
+    plt.xlabel(selected_feature)
+    plt.ylabel('ALE')
+    plt.title(f'ALE: {selected_feature}')
+    plt.legend()
+    ale_filename = 'plots/ale_project2.png'
+    plt.savefig(os.path.join(settings.MEDIA_ROOT, ale_filename), dpi=150, bbox_inches='tight')
+    plt.close()
+    context['ale_image_url'] = settings.MEDIA_URL + ale_filename
+
 
     return render(request, "project2/index.html", context)

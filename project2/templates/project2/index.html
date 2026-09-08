@@ -29,6 +29,13 @@
                     {% endfor %}
                 </select>
             </label>
+            <label>Feature:
+                <select name="feature" onchange="this.form.submit()">
+                    {% for feature in available_features %}
+                        <option value="{{ feature }}" {% if feature == selected_feature %}selected{% endif %}>{{ feature }}</option>
+                    {% endfor %}
+                </select>
+            </label>
         </form>
         {% if model_type == 'decision_tree' %}
             <p>Decision Tree Visualization:</p>
@@ -51,6 +58,14 @@
         {% else %}
             <p>No counterfactuals found</p>
         {% endif %}
+        <p>Partial Dependence Plot ({{ selected_feature }}):</p>
+        <a href="{{ pdp_image_url }}" target="_blank">
+            <img src="{{ pdp_image_url }}" alt="Partial Dependence Plot">
+        </a>
+        <p>Accumulated Local Effects Plot ({{ selected_feature }}):</p>
+        <a href="{{ ale_image_url }}" target="_blank">
+            <img src="{{ ale_image_url }}" alt="Accumulated Local Effects Plot">
+        </a>
         <div class="button-container">
             <a href="{% url 'home:index' %}">
                 <button type="button">Return to Homepage</button>
