@@ -54,7 +54,107 @@
             </div>
         </div>
 
+        <hr style="margin: 25px 0;">
+
+        <h3>Task 4: Active Learning with a Query Budget</h3>
+
+        <div style="background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+            <p style="margin: 0;"><strong>Query strategy:</strong> Because expert queries are limited, random articles are compared with articles where the AI is least confident. The system learns the expert's reliability using only the queried answers.</p>
+        </div>
+
+        <h4>Random Selection</h4>
+        <div style="overflow-x: auto;">
+            <table border="1" class="dataframe">
+                <thead>
+                    <tr style="text-align: right;">
+                        <th>Budget</th>
+                        <th>Team Accuracy</th>
+                        <th>Gain over AI</th>
+                        <th>Deferral Rate</th>
+                        <th>Beneficial</th>
+                        <th>Harmful</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in task4_rows %}
+                    <tr>
+                        <td>{{ row.budget }}</td>
+                        <td>{{ row.random_accuracy_pct }}</td>
+                        <td>{{ row.random_gain_pp }}</td>
+                        <td>{{ row.random_deferral_rate }}</td>
+                        <td>{{ row.random_beneficial_rate }}</td>
+                        <td>{{ row.random_harmful_rate }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Active Selection (AI Uncertainty)</h4>
+        <div style="overflow-x: auto;">
+            <table border="1" class="dataframe">
+                <thead>
+                    <tr style="text-align: right;">
+                        <th>Budget</th>
+                        <th>Team Accuracy</th>
+                        <th>Gain over AI</th>
+                        <th>Deferral Rate</th>
+                        <th>Beneficial</th>
+                        <th>Harmful</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in task4_rows %}
+                    <tr>
+                        <td>{{ row.budget }}</td>
+                        <td>{{ row.active_accuracy_pct }}</td>
+                        <td>{{ row.active_gain_pp }}</td>
+                        <td>{{ row.active_deferral_rate }}</td>
+                        <td>{{ row.active_beneficial_rate }}</td>
+                        <td>{{ row.active_harmful_rate }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Competence Discovery</h4>
+        <div style="overflow-x: auto;">
+            <table border="1" class="dataframe">
+                <thead>
+                    <tr style="text-align: right;">
+                        <th>Budget</th>
+                        <th>Random Specialty</th>
+                        <th>Uncertainty Specialty</th>
+                        <th>Random AUROC</th>
+                        <th>Uncertainty AUROC</th>
+                        <th>Team Accuracy (R / U)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in task4_rows %}
+                    <tr>
+                        <td>{{ row.budget }}</td>
+                        <td>{{ row.random_specialty_query_count }} ({{ row.random_specialty_query_share }})</td>
+                        <td>{{ row.active_specialty_query_count }} ({{ row.active_specialty_query_share }})</td>
+                        <td>{{ row.random_competence_auc }}</td>
+                        <td>{{ row.active_competence_auc }}</td>
+                        <td>{{ row.random_accuracy_pct }} / {{ row.active_accuracy_pct }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <img src="{{ learning_curve_plot_url }}" alt="Task 4 gain over AI baseline by query budget" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #ccc;">
+        </div>
+
         <div class="button-container" style="margin-top: 25px;">
+            <button type="button">Download the report</button>
+        </div>
+
+        <div class="button-container">
             <a href="{% url 'home:index' %}">
                 <button type="button">Return to Homepage</button>
             </a>
