@@ -93,6 +93,7 @@ def run_task2(X_test, y_test):
     expert_outside_acc = round(
         float(np.mean(expert_preds[~in_topic] == y_test_arr[~in_topic])), 4
     )
+    expert_topic_count = int(np.sum(in_topic))
     expert_topic_coverage = f"{round(float(np.mean(in_topic)) * 100, 2)}%"
     expert_plot_url = generate_expert_plot(
         expert_inside_acc, expert_outside_acc, expert_accuracy
@@ -106,6 +107,7 @@ def run_task2(X_test, y_test):
         "expert_accuracy": expert_accuracy,
         "expert_inside_acc": expert_inside_acc,
         "expert_outside_acc": expert_outside_acc,
+        "expert_topic_count": expert_topic_count,
         "expert_topic_coverage": expert_topic_coverage,
         "expert_region_coverage": expert_topic_coverage,
         "expert_plot_url": expert_plot_url,

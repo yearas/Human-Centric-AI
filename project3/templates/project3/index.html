@@ -24,10 +24,33 @@
                 <p>Expert overall test accuracy: {{ expert_accuracy }}</p>
                 <p>Strength (Inside sports topic accuracy): {{ expert_inside_acc }}</p>
                 <p>Weakness (Outside sports topic accuracy): {{ expert_outside_acc }}</p>
+                <p>Articles inside the specialty: {{ expert_topic_count }} of 7,600</p>
                 <p>Sports topic coverage: {{ expert_topic_coverage|default:expert_region_coverage }}</p>
             </div>
             <div style="flex: 1; min-width: 320px; text-align: center;">
                 <img src="{{ expert_plot_url }}" alt="Simulated Expert Accuracy Chart" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #ccc;">
+            </div>
+        </div>
+
+        <hr style="margin: 25px 0;">
+
+        <h3>Task 3: Learning to Defer (Human and AI Collaboration)</h3>
+
+        <div style="background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+             <p style="margin: 0;"><strong>Deferral strategy:</strong> For each article, the system chooses between the AI and the simulated expert. A Logistic Regression model learns when the expert is likely to be correct. The system asks the expert only when the expert appears more reliable than the AI.</p>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-top: 15px;">
+            <div style="flex: 1; min-width: 260px;">
+                <p>Team Accuracy (AI + Expert): <strong>{{ team_accuracy }}</strong></p>
+                <p>Gain over AI alone: <strong>{{ gain_over_ai }}</strong></p>
+                <p>Deferral Rate (Expert workload): <strong>{{ deferral_rate }}</strong></p>
+                <p>Beneficial Deferrals among deferred cases (AI wrong, Expert saved): <strong>{{ beneficial_rate }}</strong></p>
+                <p>Harmful Deferrals among deferred cases (AI right, Expert ruined): <strong>{{ harmful_rate }}</strong></p>
+                <p>Neutral Deferrals among deferred cases (same outcome either way): <strong>{{ neutral_rate }}</strong></p>
+            </div>
+            <div style="flex: 1.4; min-width: 380px; text-align: center;">
+                <img src="{{ deferral_plot_url }}" alt="Learning to Defer Visual Results" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #ccc;">
             </div>
         </div>
 

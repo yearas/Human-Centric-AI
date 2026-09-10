@@ -6,18 +6,24 @@ from datasets import load_dataset
 
 from .task1 import run_task1
 from .task2 import run_task2
+from .task3 import run_task3
 
 CACHE_FILE = Path(__file__).resolve().parent / "cache.joblib"
 MODEL_FILE = Path(__file__).resolve().parent / "saved_models/baseline_model.joblib"
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 
 
 def index(request):
     # Fast load: return cached results if already computed
     if CACHE_FILE.exists():
         data = joblib.load(CACHE_FILE)
-        plot_path = Path(settings.MEDIA_ROOT) / "plots/expert_accuracy_task2.png"
-        if data.get("cache_version") == CACHE_VERSION and plot_path.exists():
+        plot_files = [
+            Path(settings.MEDIA_ROOT) / "plots/expert_accuracy_task2.png",
+            Path(settings.MEDIA_ROOT) / "plots/task3_deferral_results.png",
+        ]
+        if data.get("cache_version") == CACHE_VERSION and all(
+            plot_file.exists() for plot_file in plot_files
+        ):
             return render(request, "project3/index.html", data)
 
     # 1. Load AG News dataset
@@ -33,6 +39,20 @@ def index(request):
     # 3. Task 2: Simulated Expert
     task2_results = run_task2(X_test, y_test)
 
+    # 4. Task 3: Learning to Defer
+    task3_results = run_task3(
+        X_train,
+        y_train,
+        X_test,
+        task2_results["y_test_arr"],
+        task1_results["model"],
+        task1_results["ai_probs"],
+        task1_results["y_pred"],
+        task1_results["accuracy"],
+        task2_results["expert_preds"],
+        task2_results["expert_accuracy"],
+    )
+
     context = {
         "cache_version": CACHE_VERSION,
         # Task 1
@@ -44,9 +64,18 @@ def index(request):
         "expert_accuracy": task2_results["expert_accuracy"],
         "expert_inside_acc": task2_results["expert_inside_acc"],
         "expert_outside_acc": task2_results["expert_outside_acc"],
+        "expert_topic_count": task2_results["expert_topic_count"],
         "expert_topic_coverage": task2_results["expert_topic_coverage"],
         "expert_region_coverage": task2_results["expert_topic_coverage"],
         "expert_plot_url": task2_results["expert_plot_url"],
+        # Task 3
+        "team_accuracy": task3_results["team_accuracy"],
+        "gain_over_ai": task3_results["gain_over_ai"],
+        "deferral_rate": task3_results["deferral_rate"],
+        "beneficial_rate": task3_results["beneficial_rate"],
+        "harmful_rate": task3_results["harmful_rate"],
+        "neutral_rate": task3_results["neutral_rate"],
+        "deferral_plot_url": task3_results["deferral_plot_url"],
     }
 
     # Save cache for instant future loads
