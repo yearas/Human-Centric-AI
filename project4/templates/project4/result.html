@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Thank you for taking part!</div>
+    </div>
+    <div class="main-text">
+        <p>You answered {{ number_of_trials }} questions using the
+           &quot;{{ design }}&quot; interface. Based on them, the model has resolved
+           {{ certainty_percent }}% of its initial uncertainty about your taste.</p>
+
+        <p>Movies recommended to you:</p>
+        <ol>
+            {% for movie in recommendations %}
+                <li>{{ movie.title }} ({{ movie.year }}) &middot; {{ movie.genres }} &middot; IMDb {{ movie.score }}</li>
+            {% endfor %}
+        </ol>
+
+        <div class="button-container">
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

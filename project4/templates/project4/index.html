@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Project 4 - Preference elicitation</div>
+    </div>
+    <div class="main-text">
+        <p>This study investigates how a recommender system can learn your personal movie
+           taste from a small number of choices. You will be shown movies from the IMDB
+           5000 dataset and asked which of them you prefer.</p>
+
+        <p>No personal data is collected. Only your choices and the time you needed for
+           them are stored, under a number that is not linked to your identity. You can
+           stop at any time by simply closing this page.</p>
+
+        {% if consent_missing %}
+            <p style="color: red;">It is required to give your consent before starting the study</p>
+        {% endif %}
+
+        <form action="{% url 'project4:start_study' %}" method="post">
+            {% csrf_token %}
+            <label>
+                <input type="checkbox" name="consent" value="yes">
+                I agree that my answers may be stored and analyzed for this study
+            </label>
+            <div class="button-container">
+                <button type="submit">Start the study</button>
+            </div>
+        </form>
+
+        <div class="button-container">
+            <a href="{% static 'project4/report.pdf' %}" target="_blank">
+                <button type="button">Download the report (PDF)</button>
+            </a>
+            <a href="{% url 'home:index' %}">
+                <button type="button">Return to Homepage</button>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

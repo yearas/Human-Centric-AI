@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="box">
+    <div class="title-container">
+        <div class="title">Question {{ trial_number }} of {{ total_trials }}</div>
+    </div>
+    <div class="main-text">
+        {% if design == 'pairwise' %}
+            <p>Which of these two movies would you rather watch?</p>
+        {% else %}
+            <p>Click the movies in your order of preference, starting with your favorite.</p>
+        {% endif %}
+
+        {% if chosen_movies %}
+            <p>Your order so far:</p>
+            <ol>
+                {% for movie in chosen_movies %}
+                    <li>{{ movie.title }} ({{ movie.year }})</li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+
+        <form action="{% url 'project4:trial' %}" method="post">
+            {% csrf_token %}
+            {% for movie in remaining_movies %}
+                <div style="margin-bottom: 12px;">
+                    <button type="submit" name="chosen_index" value="{{ movie.index }}">
+                        {{ movie.title }} ({{ movie.year }})<br>
+                        <small>{{ movie.genres }} - IMDb {{ movie.score }} - {{ movie.director }}</small>
+                    </button>
+
+                </div>
+            {% endfor %}
+        </form>
+    </div>
+</div>
+{% endblock %}
