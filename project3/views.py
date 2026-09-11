@@ -1,6 +1,7 @@
 from pathlib import Path
 import joblib
 from django.conf import settings
+from django.http import FileResponse, Http404
 from django.shortcuts import render
 from datasets import load_dataset
 
@@ -102,3 +103,19 @@ def index(request):
     joblib.dump(context, CACHE_FILE)
 
     return render(request, "project3/index.html", context)
+
+
+def download_report(request):
+    report_path = Path(__file__).resolve().parent / "Report.pdf"
+
+    try:
+        report_file = report_path.open("rb")
+    except FileNotFoundError:
+        raise Http404("The report is not available.")
+
+    return FileResponse(
+        report_file,
+        as_attachment=True,
+        filename="Project3_Report.pdf",
+        content_type="application/pdf",
+    )
